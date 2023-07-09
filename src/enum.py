@@ -1,0 +1,42 @@
+from __future__ import annotations
+
+from enum import Enum, EnumMeta
+import jax
+import jax.numpy as jnp
+from typing import Type
+from dataclasses import dataclass
+
+
+@jax.tree_util.register_pytree_node_class
+@dataclass
+class EnumItem:
+    name: str
+    value: jax.Array
+    obj_class: Type
+
+    def __str__(self):
+        return f"<{self.obj_class.__name__}.{self.name}: {self.value}> as PyTreeNode"
+
+    def __repr__(self):
+        return str(self)
+
+    def __hash__(self):
+        return hash(tuple(jax.tree_util.tree_leaves(self)))
+
+    def tree_flatten(self):
+        return jnp.asarray(self.value)[None], (self.name, self.obj_class)
+
+    @classmethod
+    def tree_unflatten(cls, aux, children) -> EnumItem:
+        return cls(value=children[0], name=aux[0], obj_class=aux[1])
+
+
+class EnumerableMeta(EnumMeta):
+    def __setattr__(self, name: str, value: Any) -> None:
+        if not name.startswith("_"):
+            value = EnumItem(name, value.value, self)
+        return super().__setattr__(name, value)
+
+
+class Enumerable(Enum, metaclass=EnumerableMeta):
+    ...
