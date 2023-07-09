@@ -9,7 +9,7 @@ requires = ["setuptools >= 50", "setuptools-scm[toml]>=6.2", "wheel"]
 name = "jax_enums"
 dynamic = ["version", "dependencies"]
 description = "JAX-compatible Enumerations."
-requires-python = ">=3.10"
+requires-python = ">=3.9"
 readme = "README.md"
 license = {file = "LICENSE", name = "Apache-2.0"}
 authors = [
