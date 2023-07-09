@@ -6,7 +6,7 @@ build-backend = "setuptools.build_meta"
 requires = ["setuptools >= 50", "setuptools-scm[toml]>=6.2", "wheel"]
 
 [project]
-name = "Jax Enums"
+name = "jax_enums"
 dynamic = ["version", "dependencies"]
 description = "JAX-compatible Enumerations."
 requires-python = ">=3.10"
