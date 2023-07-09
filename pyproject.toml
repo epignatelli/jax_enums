@@ -63,7 +63,7 @@ dependencies = {file = "./requirements.txt"}
 
 
 [tool.setuptools.packages.find]
-include = ["src*"]
+include = ["jax_enums*"]
 exclude = ["tests", "examples", "scripts", "docs"]
 
 
