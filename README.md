@@ -30,9 +30,11 @@ jax.jit(f)(array, enumerable)
 ```
 
 ## Cite
+```
 @misc{pignatelli2023jax_enums,
   author = {Pignatelli, Eduardo},
   title = {JAX_ENUMS: JAX-compatible enumerations},
+```
   year = {2023},
   publisher = {GitHub},
   journal = {GitHub repository},
