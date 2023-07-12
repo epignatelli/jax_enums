@@ -7,10 +7,9 @@ A Jax-compatible enumerable.
 
 
 ## Installation
-You can install `jax_enums` directly from GitHub:
 
 ```sh
-pip install git+https://github.com/epignatelli/jax_enums
+pip install jax_enums
 ```
 
 ## Example
