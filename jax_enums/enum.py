@@ -19,10 +19,11 @@
 
 from __future__ import annotations
 
+from typing import Type, Any
 from enum import Enum, EnumMeta
+
 import jax
 import jax.numpy as jnp
-from typing import Type
 from dataclasses import dataclass
 
 
@@ -41,6 +42,12 @@ class EnumItem:
 
     def __hash__(self):
         return hash(tuple(jax.tree_util.tree_leaves(self)))
+
+    def __eq__(self, other):
+        if isinstance(other, EnumItem):
+            with jax.ensure_compile_time_eval():
+                return self.value == other.value
+        return hash(self) == hash(other)
 
     def tree_flatten(self):
         return jnp.asarray(self.value)[None], (self.name, self.obj_class)
