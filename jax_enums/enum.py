@@ -44,13 +44,16 @@ class EnumItem:
         return hash(tuple(jax.tree_util.tree_leaves(self)))
 
     def __eq__(self, other):
-        if isinstance(other, EnumItem):
-            with jax.ensure_compile_time_eval():
-                return self.value == other.value
-        return hash(self) == hash(other)
+        if not isinstance(other, EnumItem):
+            raise TypeError("Cannot compare EnumItem with non-EnumItem {}".format(other))
+        with jax.ensure_compile_time_eval():
+            return jnp.array_equal(self.value, other.value)
+
+    def __ne__(self, other):
+        return jnp.logical_not(self.__eq__(other))
 
     def tree_flatten(self):
-        return jnp.asarray(self.value)[None], (self.name, self.obj_class)
+        return (self.value,), (self.name, self.obj_class)
 
     @classmethod
     def tree_unflatten(cls, aux, children) -> EnumItem:
@@ -60,7 +63,7 @@ class EnumItem:
 class EnumerableMeta(EnumMeta):
     def __setattr__(self, name: str, value: Any) -> None:
         if not name.startswith("_"):
-            value = EnumItem(name, value.value, self)
+            value = EnumItem(value=jnp.asarray(value.value), name=name, obj_class=self)
         return super().__setattr__(name, value)
 
 
