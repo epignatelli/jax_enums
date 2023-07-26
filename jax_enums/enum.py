@@ -27,21 +27,32 @@ import jax.numpy as jnp
 from dataclasses import dataclass
 
 
+class SilentlyFrozenDict(dict):
+    def __setitem__(self, key, value):
+        # Enums are immutable, so silently ignore any attempts to edit an item
+        if key in self:
+            return
+        return super().__setitem__(key, value)
+
+
 @jax.tree_util.register_pytree_node_class
 @dataclass
 class EnumItem:
     name: str
     value: jax.Array
-    obj_class: Type
+    obj_class: str
 
     def __str__(self):
-        return f"<{self.obj_class.__name__}.{self.name}: {self.value}> as PyTreeNode"
+        return f"<{self.obj_class}.{self.name}: {self.value}> as PyTreeNode"
 
     def __repr__(self):
         return str(self)
 
     def __hash__(self):
         return hash(tuple(jax.tree_util.tree_leaves(self)))
+
+    def __getitem__(self, idx):
+        return jax.tree_util.tree_map(lambda x: x[idx], self)
 
     def __eq__(self, other):
         if not isinstance(other, EnumItem):
@@ -61,9 +72,22 @@ class EnumItem:
 
 
 class EnumerableMeta(EnumMeta):
+    def __new__(mcls, name, bases, attrs):
+        # this hack is to pass the equality tests in Enum.__new__
+        # since, if the value of an enum is an Array,
+        #  Array == Array returns an Array, which cannot be cast to bool
+        for name, value in attrs.items():
+            if not name.startswith("_") and not isinstance(value, EnumItem):
+                # value is the value assigned to the item, e.g., 0 for A = 0
+                # A == attrs["__qualname__"]
+                # 0 == value
+                value = EnumItem(value=jnp.asarray(value), name=name, obj_class=attrs["__qualname__"])
+                dict.update(attrs, {name: value})
+        return super().__new__(mcls, name, bases, attrs)
+
     def __setattr__(self, name: str, value: Any) -> None:
-        if not name.startswith("_"):
-            value = EnumItem(value=jnp.asarray(value.value), name=name, obj_class=self)
+        if not name.startswith("_") and not isinstance(value, EnumItem) and name == value.name:
+            value = EnumItem(value=jnp.asarray(value.value.value), name=name, obj_class=value.value.obj_class)
         return super().__setattr__(name, value)
 
 
