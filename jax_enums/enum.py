@@ -19,20 +19,12 @@
 
 from __future__ import annotations
 
-from typing import Type, Any
+from typing import Any
 from enum import Enum, EnumMeta
 
 import jax
 import jax.numpy as jnp
 from dataclasses import dataclass
-
-
-class SilentlyFrozenDict(dict):
-    def __setitem__(self, key, value):
-        # Enums are immutable, so silently ignore any attempts to edit an item
-        if key in self:
-            return
-        return super().__setitem__(key, value)
 
 
 @jax.tree_util.register_pytree_node_class
