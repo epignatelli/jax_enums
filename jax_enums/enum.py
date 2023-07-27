@@ -19,12 +19,12 @@
 
 from __future__ import annotations
 
-from typing import Type, Any
+from typing import Any
 from enum import Enum, EnumMeta
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
-from dataclasses import dataclass
 
 
 @jax.tree_util.register_pytree_node_class
@@ -32,10 +32,10 @@ from dataclasses import dataclass
 class EnumItem:
     name: str
     value: jax.Array
-    obj_class: Type
+    obj_class: str
 
     def __str__(self):
-        return f"<{self.obj_class.__name__}.{self.name}: {self.value}> as PyTreeNode"
+        return f"<{self.obj_class}.{self.name}: {self.value}> as PyTreeNode"
 
     def __repr__(self):
         return str(self)
@@ -43,14 +43,22 @@ class EnumItem:
     def __hash__(self):
         return hash(tuple(jax.tree_util.tree_leaves(self)))
 
+    def __getitem__(self, idx):
+        return jax.tree_util.tree_map(lambda x: x[idx], self)
+
     def __eq__(self, other):
-        if isinstance(other, EnumItem):
-            with jax.ensure_compile_time_eval():
-                return self.value == other.value
-        return hash(self) == hash(other)
+        if not isinstance(other, EnumItem):
+            raise TypeError(
+                "Cannot compare EnumItem with non-EnumItem {}".format(other)
+            )
+        with jax.ensure_compile_time_eval():
+            return jnp.array_equal(self.value, other.value)
+
+    def __ne__(self, other):
+        return jnp.logical_not(self.__eq__(other))
 
     def tree_flatten(self):
-        return jnp.asarray(self.value)[None], (self.name, self.obj_class)
+        return (self.value,), (self.name, self.obj_class)
 
     @classmethod
     def tree_unflatten(cls, aux, children) -> EnumItem:
@@ -58,9 +66,32 @@ class EnumItem:
 
 
 class EnumerableMeta(EnumMeta):
+    def __new__(mcls, attr_name, bases, attrs, **kwargs):
+        # this hack is to pass the equality tests in Enum.__new__
+        # since, if the value of an enum is an Array,
+        #  Array == Array returns an Array, which cannot be cast to bool
+        for attr_name, value in attrs.items():
+            if not attr_name.startswith("_") and not isinstance(value, EnumItem):
+                # value is the value assigned to the item, e.g., 0 for A = 0
+                # A == attrs["__qualname__"]
+                # 0 == value
+                value = EnumItem(
+                    value=jnp.asarray(value), name=attr_name, obj_class=attrs["__qualname__"]
+                )
+                dict.update(attrs, {attr_name: value})
+        return super().__new__(mcls, attr_name, bases, attrs)
+
     def __setattr__(self, name: str, value: Any) -> None:
-        if not name.startswith("_"):
-            value = EnumItem(name, value.value, self)
+        if (
+            not name.startswith("_")
+            and not isinstance(value, EnumItem)
+            and name == value.name
+        ):
+            value = EnumItem(
+                value=jnp.asarray(value.value.value),
+                name=name,
+                obj_class=value.value.obj_class,
+            )
         return super().__setattr__(name, value)
 
 

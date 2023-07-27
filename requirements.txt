@@ -1,2 +1,4 @@
 typing-extensions
 jax
+jaxlib
+pytest
