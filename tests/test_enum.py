@@ -14,7 +14,6 @@ class Bar(Enumerable):
 
 
 def test_jit():
-
     def test(enum):
         return enum == Foo.BAZ
 
@@ -22,24 +21,25 @@ def test_jit():
 
 
 def test_vmap():
-    def test(a, b):
-        return a == b
+    def test(first, other):
+        return first == other
 
     jax.vmap(test)(Bar.FOO, Bar.BAZ)
 
 
 def test_equality():
-    def test(a, b):
-        return a == b
+    def test(first, other):
+        return first == other
 
     jax.jit(test)(Foo.BAR, Foo.BAR)
     jax.jit(test)(Foo.BAR, Foo.BAZ)
 
-    a = Bar.FOO
-    b = Bar.BAZ
-    jax.vmap(test)(a, b)
+    first = Bar.FOO
+    other = Bar.BAZ
+    jax.vmap(test)(first, other)
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     test_jit()
     test_vmap()
     test_equality()

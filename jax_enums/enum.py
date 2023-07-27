@@ -21,10 +21,10 @@ from __future__ import annotations
 
 from typing import Any
 from enum import Enum, EnumMeta
+from dataclasses import dataclass
 
 import jax
 import jax.numpy as jnp
-from dataclasses import dataclass
 
 
 @jax.tree_util.register_pytree_node_class
@@ -48,7 +48,9 @@ class EnumItem:
 
     def __eq__(self, other):
         if not isinstance(other, EnumItem):
-            raise TypeError("Cannot compare EnumItem with non-EnumItem {}".format(other))
+            raise TypeError(
+                "Cannot compare EnumItem with non-EnumItem {}".format(other)
+            )
         with jax.ensure_compile_time_eval():
             return jnp.array_equal(self.value, other.value)
 
@@ -64,22 +66,32 @@ class EnumItem:
 
 
 class EnumerableMeta(EnumMeta):
-    def __new__(mcls, name, bases, attrs):
+    def __new__(mcls, attr_name, bases, attrs, **kwargs):
         # this hack is to pass the equality tests in Enum.__new__
         # since, if the value of an enum is an Array,
         #  Array == Array returns an Array, which cannot be cast to bool
-        for name, value in attrs.items():
-            if not name.startswith("_") and not isinstance(value, EnumItem):
+        for attr_name, value in attrs.items():
+            if not attr_name.startswith("_") and not isinstance(value, EnumItem):
                 # value is the value assigned to the item, e.g., 0 for A = 0
                 # A == attrs["__qualname__"]
                 # 0 == value
-                value = EnumItem(value=jnp.asarray(value), name=name, obj_class=attrs["__qualname__"])
-                dict.update(attrs, {name: value})
-        return super().__new__(mcls, name, bases, attrs)
+                value = EnumItem(
+                    value=jnp.asarray(value), name=attr_name, obj_class=attrs["__qualname__"]
+                )
+                dict.update(attrs, {attr_name: value})
+        return super().__new__(mcls, attr_name, bases, attrs)
 
     def __setattr__(self, name: str, value: Any) -> None:
-        if not name.startswith("_") and not isinstance(value, EnumItem) and name == value.name:
-            value = EnumItem(value=jnp.asarray(value.value.value), name=name, obj_class=value.value.obj_class)
+        if (
+            not name.startswith("_")
+            and not isinstance(value, EnumItem)
+            and name == value.name
+        ):
+            value = EnumItem(
+                value=jnp.asarray(value.value.value),
+                name=name,
+                obj_class=value.value.obj_class,
+            )
         return super().__setattr__(name, value)
 
 
