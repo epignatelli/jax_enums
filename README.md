@@ -1,9 +1,10 @@
-# JAX_ENUMS
+# JAX_ENUMS: Jax-compatible enumerables
+
+[![CI](https://github.com/epignatelli/jax_enums/actions/workflows/CI.yml/badge.svg)](https://github.com/epignatelli/jax_enums/actions/workflows/CI.yml)
+[![CD](https://github.com/epignatelli/jax_enums/actions/workflows/CD.yml/badge.svg)](https://github.com/epignatelli/jax_enums/actions/workflows/CD.yml)
+![PyPI version](https://img.shields.io/pypi/v/jax_enums?label=PyPI&color=%230099ab)
 
 **[Installation](#installation)** | **[Examples](#example)** | **[Cite](#cite)**
-
-A Jax-compatible enumerable.
-
 
 
 ## Installation
