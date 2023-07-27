@@ -1,10 +1,10 @@
 name: CD
 
 on:
+  workflow_dispatch:
   push:
     branches:
-      - main
-  workflow_dispatch:
+      - "main"
 
 jobs:
   release:
@@ -23,24 +23,20 @@ jobs:
 
           echo "JAX_ENUMS_VERSION=$JAX_ENUMS_VERSION" >> $GITHUB_ENV
 
-      - name: Create and push tag
-        run: |
-          echo "Creating tag ${{ env.JAX_ENUMS_VERSION }}"
-          git tag ${{ env.JAX_ENUMS_VERSION }}
-          git push --tags
-
-      - name: Create changelog
+      - name: Create changelog and push tag
         id: changelog
         uses: TriPSs/conventional-changelog-action@v3
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
-          output-file: "false"
+          output-file: false
+          fallback-version: ${{ env.JAX_ENUMS_VERSION }}
+          skip-commit: true
 
       - name: Create Release
         uses: ncipollo/release-action@v1
         with:
           tag: ${{ env.JAX_ENUMS_VERSION }}
-          name: "JAX_ENUM release v${{ env.JAX_ENUMS_VERSION }}"
+          name: "JAX_ENUMS release v${{ env.JAX_ENUMS_VERSION }}"
           body: ${{ steps.changelog.outputs.clean_changelog }}
 
       - uses: actions/setup-python@v4
